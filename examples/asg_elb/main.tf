@@ -102,6 +102,7 @@ module "example_asg" {
 ######
 module "elb" {
   source = "terraform-aws-modules/elb/aws"
+  version = "~> 1.0"
 
   name = "elb-example"
 

@@ -38,13 +38,11 @@ resource "aws_autoscaling_group" "this" {
   min_size             = "${var.min_size}"
   desired_capacity     = "${var.desired_capacity}"
 
-  load_balancers            = ["${var.load_balancers}"]
   health_check_grace_period = "${var.health_check_grace_period}"
   health_check_type         = "${var.health_check_type}"
 
   min_elb_capacity          = "${var.min_elb_capacity}"
   wait_for_elb_capacity     = "${var.wait_for_elb_capacity}"
-  target_group_arns         = ["${var.target_group_arns}"]
   default_cooldown          = "${var.default_cooldown}"
   force_delete              = "${var.force_delete}"
   termination_policies      = "${var.termination_policies}"
@@ -79,13 +77,11 @@ resource "aws_autoscaling_group" "this_with_initial_lifecycle_hook" {
   min_size             = "${var.min_size}"
   desired_capacity     = "${var.desired_capacity}"
 
-  load_balancers            = ["${var.load_balancers}"]
   health_check_grace_period = "${var.health_check_grace_period}"
   health_check_type         = "${var.health_check_type}"
 
   min_elb_capacity          = "${var.min_elb_capacity}"
   wait_for_elb_capacity     = "${var.wait_for_elb_capacity}"
-  target_group_arns         = ["${var.target_group_arns}"]
   default_cooldown          = "${var.default_cooldown}"
   force_delete              = "${var.force_delete}"
   termination_policies      = "${var.termination_policies}"
@@ -127,4 +123,18 @@ resource "random_pet" "asg_name" {
     # Generate a new pet name each time we switch launch configuration
     lc_name = "${var.create_lc ? element(concat(aws_launch_configuration.this.*.name, list("")), 0) : var.launch_configuration}"
   }
+}
+
+# Attach This ASG to ELBs
+resource "aws_autoscaling_attachment" "this_elb_attachment" {
+  count                  = "${length(var.load_balancers)}"
+  autoscaling_group_name = "${local.this_autoscaling_group_name}"
+  elb                    = "${element(var.load_balancers, count.index )}"
+}
+
+# Attach This ASG to target group ARNs
+resource "aws_autoscaling_attachment" "this_asg_attachment" {
+  count                  = "${length(var.target_group_arns)}"
+  autoscaling_group_name = "${local.this_autoscaling_group_name}"
+  alb_target_group_arn   = "${element(var.target_group_arns, count.index)}"
 }
